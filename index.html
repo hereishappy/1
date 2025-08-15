@@ -29,11 +29,11 @@
 
     .ticker-wrap {
       display: flex;
-      animation: tickerMove 25s linear infinite;
+      animation: tickerMove 30s linear infinite;
     }
 
     .ticker-item {
-      padding-right: 50px; /* spacing between items */
+      padding-right: 50px;
     }
 
     @keyframes tickerMove {
@@ -63,46 +63,74 @@
   </iframe>
 
   <script>
-    async function updateTicker() {
+    let userLocation = "Unknown";
+    let userRegion = "";
+    let userCountry = "";
+    let temperature = "";
+    let windSpeed = "";
+    let condition = "";
+    let localTime = "";
+
+    async function fetchData() {
       try {
         // Get location
         let locRes = await fetch("https://ipapi.co/json/");
         let locData = await locRes.json();
-        let location = `${locData.city}, ${locData.region}, ${locData.country_name}`;
+        userLocation = locData.city;
+        userRegion = locData.region;
+        userCountry = locData.country_name;
 
         // Get weather
         let weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${locData.latitude}&longitude=${locData.longitude}&current_weather=true`);
         let weatherData = await weatherRes.json();
-        let temp = weatherData.current_weather.temperature;
-        let wind = weatherData.current_weather.windspeed;
+        temperature = weatherData.current_weather.temperature;
+        windSpeed = weatherData.current_weather.windspeed;
+        condition = weatherData.current_weather.weathercode; // You can map codes to conditions if needed
 
-        // Prepare updates
-        let updates = [
-          "📊 Site Reporting Dashboard — Live Project Updates",
-          `📍 Location: ${location}`,
-          `🌡️ Temp: ${temp}°C | 💨 Wind: ${wind} km/h`,
-          "🚧 Current Site Progress: 78% Complete",
-          "📅 Next Review Meeting: Aug 25, 2025",
-          "🌦️ Weather Alert: Light Rain Expected"
-        ];
-
-        // Fill ticker twice for continuous scroll
-        let ticker = document.getElementById("ticker");
-        ticker.innerHTML = "";
-        for (let i = 0; i < 2; i++) {
-          updates.forEach(text => {
-            let span = document.createElement("span");
-            span.className = "ticker-item";
-            span.textContent = text;
-            ticker.appendChild(span);
-          });
-        }
+        // Build ticker
+        updateTicker();
       } catch (error) {
         document.getElementById("ticker").innerHTML = "<span class='ticker-item'>⚠️ Unable to fetch live location/weather data</span>";
       }
     }
 
-    updateTicker();
+    function getLocalTime() {
+      localTime = new Date().toLocaleTimeString();
+      updateTicker();
+    }
+
+    function updateTicker() {
+      let updates = [
+        `📍 Location: ${userLocation}, ${userRegion}, ${userCountry}`,
+        `⏰ Local Time: ${localTime}`,
+        `🌡️ Temp: ${temperature}°C`,
+        `💨 Wind: ${windSpeed} km/h`,
+        "🚧 Current Site Progress: 78% Complete",
+        "📅 Next Review Meeting: Aug 25, 2025",
+        "🌦️ Weather Alert: Light Rain Expected"
+      ];
+
+      // Fill twice for continuous loop
+      let ticker = document.getElementById("ticker");
+      ticker.innerHTML = "";
+      for (let i = 0; i < 2; i++) {
+        updates.forEach(text => {
+          let span = document.createElement("span");
+          span.className = "ticker-item";
+          span.textContent = text;
+          ticker.appendChild(span);
+        });
+      }
+    }
+
+    // Initial load
+    fetchData();
+
+    // Update time every second
+    setInterval(getLocalTime, 1000);
+
+    // Refresh weather/location every 30 minutes
+    setInterval(fetchData, 1800000);
   </script>
 </body>
 </html>
