@@ -22,18 +22,23 @@
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
       overflow: hidden;
       white-space: nowrap;
-      font-size: 0.9rem; /* smaller text for ticker */
+      font-size: 0.9rem;
+      position: relative;
+      height: 35px;
     }
 
-    .ticker {
-      display: inline-block;
-      padding-left: 100%;
+    .ticker-wrap {
+      display: flex;
       animation: tickerMove 25s linear infinite;
     }
 
+    .ticker-item {
+      padding-right: 50px; /* spacing between items */
+    }
+
     @keyframes tickerMove {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(-100%); }
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
     }
 
     iframe {
@@ -46,8 +51,8 @@
 </head>
 <body>
   <header>
-    <div id="ticker" class="ticker">
-      📊 Loading site info...
+    <div id="ticker" class="ticker-wrap">
+      <span class="ticker-item">📊 Loading site info...</span>
     </div>
   </header>
 
@@ -60,30 +65,40 @@
   <script>
     async function updateTicker() {
       try {
-        // Get user's location
+        // Get location
         let locRes = await fetch("https://ipapi.co/json/");
         let locData = await locRes.json();
         let location = `${locData.city}, ${locData.region}, ${locData.country_name}`;
 
-        // Get weather using location
+        // Get weather
         let weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${locData.latitude}&longitude=${locData.longitude}&current_weather=true`);
         let weatherData = await weatherRes.json();
         let temp = weatherData.current_weather.temperature;
         let wind = weatherData.current_weather.windspeed;
 
-        // Build ticker text
+        // Prepare updates
         let updates = [
           "📊 Site Reporting Dashboard — Live Project Updates",
-          "📍 Location: " + location,
-          "🌡️ Temp: " + temp + "°C | 💨 Wind: " + wind + " km/h",
+          `📍 Location: ${location}`,
+          `🌡️ Temp: ${temp}°C | 💨 Wind: ${wind} km/h`,
           "🚧 Current Site Progress: 78% Complete",
           "📅 Next Review Meeting: Aug 25, 2025",
           "🌦️ Weather Alert: Light Rain Expected"
         ];
 
-        document.getElementById("ticker").innerText = updates.join(" • ");
+        // Fill ticker twice for continuous scroll
+        let ticker = document.getElementById("ticker");
+        ticker.innerHTML = "";
+        for (let i = 0; i < 2; i++) {
+          updates.forEach(text => {
+            let span = document.createElement("span");
+            span.className = "ticker-item";
+            span.textContent = text;
+            ticker.appendChild(span);
+          });
+        }
       } catch (error) {
-        document.getElementById("ticker").innerText = "⚠️ Unable to fetch live location/weather data";
+        document.getElementById("ticker").innerHTML = "<span class='ticker-item'>⚠️ Unable to fetch live location/weather data</span>";
       }
     }
 
